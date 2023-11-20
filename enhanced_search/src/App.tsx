@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Paper from '@mui/material/Paper';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputBase from '@mui/material/InputBase';
@@ -7,9 +7,27 @@ import SearchIcon from '@mui/icons-material/Search';
 import debounce from 'lodash/debounce';
 
 const App: React.FC = () => {
-  const [searchText, setSearchText] = React.useState('');
-  const [currentMatch, setCurrentMatch] = React.useState(0);
-  const [totalMatches, setTotalMatches] = React.useState(0);
+  const [searchText, setSearchText] = useState('');
+  const [currentMatch, setCurrentMatch] = useState(0);
+  const [pageContent, setPageContent] = useState('');
+
+  useEffect(() => {
+    async function getPageContent() {
+      const currentTabId = (await chrome.tabs.query({ active: true}))?.[0]?.id;
+      const data = (await chrome.scripting.executeScript({
+        func: () => document.body.innerText,
+        target: { tabId: currentTabId ?? -1 },
+      }))?.[0]?.result;
+      setPageContent(data);
+    }
+
+    getPageContent();
+  });
+
+  const totalMatches = useMemo(() => {
+    return pageContent.match(new RegExp(searchText, 'gi'))?.length ?? 0;
+  }, [pageContent, searchText]);
+
 
   return (
     <Paper

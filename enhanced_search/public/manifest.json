@@ -9,9 +9,10 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
+  "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "index.html",
     "default_title": "Enhanced Search"
   },
-  "permissions": ["activeTab"]
+  "permissions": ["activeTab", "scripting"]
 }

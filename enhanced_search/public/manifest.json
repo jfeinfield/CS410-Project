@@ -14,5 +14,11 @@
     "default_popup": "index.html",
     "default_title": "Enhanced Search"
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["mark.js", "Highlight.js"]
+    }
+  ],
   "permissions": ["activeTab", "scripting"]
 }

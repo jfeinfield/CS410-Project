@@ -12,6 +12,18 @@ const App: React.FC = () => {
   const [pageContent, setPageContent] = useState('');
 
   useEffect(() => {
+    async function insertHighlightCSS() {
+      const currentTabId = (await chrome.tabs.query({ active: true}))?.[0]?.id;
+      chrome.scripting.insertCSS({
+        css: 'mark.current-match { background-color: #FFB300 }',
+        target: { tabId: currentTabId ?? -1 },
+      });
+    }
+
+    insertHighlightCSS();
+  }, []);
+
+  useEffect(() => {
     async function getPageContent() {
       const currentTabId = (await chrome.tabs.query({ active: true}))?.[0]?.id;
       const data = (await chrome.scripting.executeScript({
@@ -23,6 +35,20 @@ const App: React.FC = () => {
 
     getPageContent();
   });
+
+  useEffect(() => {
+    async function highlightWord() {
+      const currentTabId = (await chrome.tabs.query({ active: true}))?.[0]?.id;
+      chrome.scripting.executeScript({
+        func: (searchText, currentMatch) => doHighlight(searchText, currentMatch),
+        target: { tabId: currentTabId ?? -1 },
+        // @ts-ignore (TS insists args has to be empty)
+        args: [searchText, currentMatch],
+      });
+    }
+
+    highlightWord();
+  }, [searchText, currentMatch]);
 
   const totalMatches = useMemo(() => {
     return pageContent.match(new RegExp(searchText, 'gi'))?.length ?? 0;

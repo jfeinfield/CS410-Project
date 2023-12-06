@@ -27,10 +27,10 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "run-script-os; cp node_modules/mark.js/dist/mark.js build/; cp src/content_scripts/* build/;",
-    "build:windows": "set INLINE_RUNTIME_CHUNK=false && react-scripts build & set INLINE_RUNTIME_CHUNK=",
-    "build:macos": "INLINE_RUNTIME_CHUNK=false react-scripts build",
-    "build:default": "INLINE_RUNTIME_CHUNK=false react-scripts build",
+    "build": "run-script-os",
+    "build:windows": "set INLINE_RUNTIME_CHUNK=false && react-scripts build & set INLINE_RUNTIME_CHUNK= & cp node_modules/mark.js/dist/mark.js build/ & cp src/content_scripts/* build/*",
+    "build:macos": "INLINE_RUNTIME_CHUNK=false react-scripts build; cp node_modules/mark.js/dist/mark.js build/; cp src/content_scripts/* build/;",
+    "build:default": "INLINE_RUNTIME_CHUNK=false react-scripts build; cp node_modules/mark.js/dist/mark.js build/; cp src/content_scripts/* build/;",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

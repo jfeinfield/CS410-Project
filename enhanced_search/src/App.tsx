@@ -6,13 +6,30 @@ import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import { MemoryVectorStore } from "langchain/vectorstores/memory";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 
 import debounce from 'lodash/debounce';
+
+const doSimilaritySearch = (query: string, vectorStore: MemoryVectorStore) => {
+  return vectorStore.similaritySearch(query, 10);
+}
+
+const embeddings = new OpenAIEmbeddings({
+  openAIApiKey: '',
+});
+
+const splitter = new RecursiveCharacterTextSplitter({ chunkSize: 250, chunkOverlap: 0 });
 
 const App: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [currentMatch, setCurrentMatch] = useState(0);
+
+  // TODO: Change to array of matches.
+  const [currentMatchText, setCurrentMatchText] = useState('');
   const [pageContent, setPageContent] = useState('');
+  const [vectorStore, setVectorStore] = useState(new MemoryVectorStore(embeddings));
 
   useEffect(() => {
     async function insertHighlightCSS() {
@@ -36,11 +53,13 @@ const App: React.FC = () => {
         })
       )?.[0]?.result;
       setPageContent(data);
+      setVectorStore(await MemoryVectorStore.fromDocuments(await splitter.createDocuments([data]), embeddings));
     }
 
     getPageContent();
-  });
+  }, []);
 
+  // TODO: pass array of matches.
   useEffect(() => {
     async function highlightWord() {
       const currentTabId = (await chrome.tabs.query({active: true}))?.[0]?.id;
@@ -49,13 +68,25 @@ const App: React.FC = () => {
           doHighlight(searchText, currentMatch),
         target: {tabId: currentTabId ?? -1},
         // @ts-ignore (TS insists args has to be empty)
-        args: [searchText, currentMatch],
+        args: [currentMatchText, currentMatch],
       });
     }
 
     highlightWord();
-  }, [searchText, currentMatch]);
+  }, [currentMatchText, currentMatch]);
 
+  useEffect(() => {
+    async function similaritySearch() {
+      if (!searchText || vectorStore.memoryVectors.length === 0) {
+        return [];
+      }
+      setCurrentMatchText((await doSimilaritySearch(searchText, vectorStore))[0].pageContent);
+    }
+    
+    similaritySearch();
+  }, [searchText])
+
+  // TODO: Change to length of matches.
   const totalMatches = useMemo(() => {
     return searchText
       ? pageContent.match(new RegExp(searchText, 'gi'))?.length ?? 0

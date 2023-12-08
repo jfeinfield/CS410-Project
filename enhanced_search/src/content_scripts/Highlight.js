@@ -1,3 +1,4 @@
+// TODO: Change args to array of matches, with currentMatch as index
 function doHighlight(searchText, currentMatch) {
   const markInstance = new Mark(document.body);
   markInstance.unmark();

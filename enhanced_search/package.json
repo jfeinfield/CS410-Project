@@ -16,6 +16,7 @@
     "@types/node": "^16.18.62",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
+    "langchain": "^0.0.202",
     "lodash": "^4.17.21",
     "mark.js": "^8.11.1",
     "react": "^18.2.0",

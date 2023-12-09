@@ -1,31 +1,26 @@
-// TODO: Change args to array of matches, with currentMatch as index
-function doHighlight(searchText, currentMatch) {
+function doHighlight(currentMatches, currentMatchIndex) {
   const markInstance = new Mark(document.body);
   markInstance.unmark();
-  
-  if (!searchText || currentMatch == null) {
+
+  if (!currentMatches?.length || currentMatchIndex == null) {
     return;
   }
 
-  markInstance.mark(searchText, {
-    separateWordSearch: false,
-    acrossElements: true,
-    className: 'highlighted-text',
-    done: () => {
-      const elements = document.getElementsByClassName('highlighted-text');
-      if (elements.length) {
-        for (let i = 0; i < elements.length; i++) {
-          if (i === currentMatch) {
-            elements[i].classList.add('current-match');
-          } else {
-            elements[i].classList.remove('current-match');
-          }
+  currentMatches.forEach((match, i) => {
+    markInstance.mark(match, {
+      separateWordSearch: false,
+      acrossElements: true,
+      className: i === currentMatchIndex ? 'current-match' : 'highlighted-text',
+      done: () => {
+        if (i === currentMatchIndex) {
+          const element = document.getElementsByClassName('current-match')[0];
+
+          element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
         }
-        elements[currentMatch].scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-      }
-    },
+      },
+    });
   });
 }

@@ -1,4 +1,4 @@
-import {useState, useEffect, useMemo} from 'react';
+import {useState, useEffect} from 'react';
 import Paper from '@mui/material/Paper';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputBase from '@mui/material/InputBase';
@@ -6,30 +6,41 @@ import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import { MemoryVectorStore } from "langchain/vectorstores/memory";
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { OpenAIEmbeddings } from "langchain/embeddings/openai";
+import {MemoryVectorStore} from 'langchain/vectorstores/memory';
+import {RecursiveCharacterTextSplitter} from 'langchain/text_splitter';
+import {OpenAIEmbeddings} from 'langchain/embeddings/openai';
 
 import debounce from 'lodash/debounce';
 
 const doSimilaritySearch = (query: string, vectorStore: MemoryVectorStore) => {
-  return vectorStore.similaritySearch(query, 10);
-}
+  return vectorStore.similaritySearchWithScore(query, 10).then((result) => {
+    return result
+      .toSorted((match) => {
+        const lines = match[0].metadata.loc.lines;
+        return lines.from + lines.to;
+      })
+      .map((match) => match[0].pageContent);
+  });
+};
 
 const embeddings = new OpenAIEmbeddings({
   openAIApiKey: '',
 });
 
-const splitter = new RecursiveCharacterTextSplitter({ chunkSize: 250, chunkOverlap: 0 });
+const splitter = new RecursiveCharacterTextSplitter({
+  chunkSize: 200,
+  chunkOverlap: 0,
+});
 
 const App: React.FC = () => {
   const [searchText, setSearchText] = useState('');
-  const [currentMatch, setCurrentMatch] = useState(0);
+  const [currentMatchIndex, setCurrentMatch] = useState(0);
 
   // TODO: Change to array of matches.
-  const [currentMatchText, setCurrentMatchText] = useState('');
-  const [pageContent, setPageContent] = useState('');
-  const [vectorStore, setVectorStore] = useState(new MemoryVectorStore(embeddings));
+  const [currentMatches, setCurrentMatches] = useState<string[]>([]);
+  const [vectorStore, setVectorStore] = useState(
+    new MemoryVectorStore(embeddings)
+  );
 
   useEffect(() => {
     async function insertHighlightCSS() {
@@ -52,8 +63,12 @@ const App: React.FC = () => {
           target: {tabId: currentTabId ?? -1},
         })
       )?.[0]?.result;
-      setPageContent(data);
-      setVectorStore(await MemoryVectorStore.fromDocuments(await splitter.createDocuments([data]), embeddings));
+      setVectorStore(
+        await MemoryVectorStore.fromDocuments(
+          await splitter.createDocuments([data]),
+          embeddings
+        )
+      );
     }
 
     getPageContent();
@@ -64,53 +79,46 @@ const App: React.FC = () => {
     async function highlightWord() {
       const currentTabId = (await chrome.tabs.query({active: true}))?.[0]?.id;
       chrome.scripting.executeScript({
-        func: (searchText, currentMatch) =>
-          doHighlight(searchText, currentMatch),
+        func: (currentMatches, currentMatchIndex) =>
+          doHighlight(currentMatches, currentMatchIndex),
         target: {tabId: currentTabId ?? -1},
         // @ts-ignore (TS insists args has to be empty)
-        args: [currentMatchText, currentMatch],
+        args: [currentMatches, currentMatchIndex],
       });
     }
 
     highlightWord();
-  }, [currentMatchText, currentMatch]);
+  }, [currentMatches, currentMatchIndex]);
 
   useEffect(() => {
     async function similaritySearch() {
       if (!searchText || vectorStore.memoryVectors.length === 0) {
         return [];
       }
-      setCurrentMatchText((await doSimilaritySearch(searchText, vectorStore))[0].pageContent);
+      setCurrentMatches(await doSimilaritySearch(searchText, vectorStore));
     }
-    
-    similaritySearch();
-  }, [searchText])
 
-  // TODO: Change to length of matches.
-  const totalMatches = useMemo(() => {
-    return searchText
-      ? pageContent.match(new RegExp(searchText, 'gi'))?.length ?? 0
-      : 0;
-  }, [pageContent, searchText]);
+    similaritySearch();
+  }, [searchText]);
 
   const incrementMatch = () => {
-    if (currentMatch === totalMatches - 1) {
+    if (currentMatchIndex === currentMatches.length - 1) {
       setCurrentMatch(0);
     } else {
-      setCurrentMatch(currentMatch + 1);
+      setCurrentMatch(currentMatchIndex + 1);
     }
   };
 
   const decrementMatch = () => {
-    if (currentMatch === 0) {
-      setCurrentMatch(totalMatches - 1);
+    if (currentMatchIndex === 0) {
+      setCurrentMatch(currentMatches.length - 1);
     } else {
-      setCurrentMatch(currentMatch - 1);
+      setCurrentMatch(currentMatchIndex - 1);
     }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
-    if (totalMatches > 0) {
+    if (currentMatches.length > 0) {
       if (event.code === 'Enter' && event.shiftKey) {
         decrementMatch();
       } else if (event.code === 'Enter') {
@@ -142,14 +150,15 @@ const App: React.FC = () => {
           <InputAdornment position="end">
             {searchText && (
               <span>
-                {totalMatches > 0 ? currentMatch + 1 : 0}/{totalMatches}
+                {currentMatches.length > 0 ? currentMatchIndex + 1 : 0}/
+                {currentMatches.length}
               </span>
             )}
             <IconButton
               aria-label="previous-search-result"
               size="small"
               edge="end"
-              disabled={totalMatches <= 0}
+              disabled={currentMatches.length <= 0}
               onClick={decrementMatch}>
               <KeyboardArrowUpIcon />
             </IconButton>
@@ -157,7 +166,7 @@ const App: React.FC = () => {
               aria-label="next-search-result"
               size="small"
               edge="start"
-              disabled={totalMatches <= 0}
+              disabled={currentMatches.length <= 0}
               onClick={incrementMatch}>
               <KeyboardArrowDownIcon />
             </IconButton>

@@ -1,0 +1,18 @@
+.MuiPaper-root {
+  top: 5px !important;
+}
+
+.MuiPaper-root,
+.MuiStack-root,
+.MuiTouchRipple-root {
+  height: 36px;
+  max-height: unset !important;
+}
+
+.MuiButtonBase-root {
+  min-height: 24px !important;
+}
+
+.Mui-disabled {
+  -webkit-text-fill-color: rgba(0, 0, 0, 0.7) !important;
+}

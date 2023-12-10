@@ -25,16 +25,19 @@ import uniq from 'lodash/fp/uniq';
 
 import './App.css';
 
+// Get word embeddings to be used for cosine similarity search between search query and documents.
 const embeddings = new OpenAIEmbeddings({
   openAIApiKey: '',
 });
 
+// Initialize text splitter to split text into chunks of at most 20 words.
 const splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 20,
   chunkOverlap: 0,
   lengthFunction: (text) => text.split(/[ \s\t\n]/).length,
 });
 
+// Loading state while the page is being split, word embeddings computed, and stored in the vector store.
 const inputPlaceholders: Record<number, string> = {
   0: 'Indexing Page...',
   1: 'Search',
@@ -42,18 +45,30 @@ const inputPlaceholders: Record<number, string> = {
 };
 
 const App: React.FC = () => {
+  // The search query.
   const [searchText, setSearchText] = useState('');
+
+  // The index of the current match in the array of matches.
   const [currentMatchIndex, setCurrentMatch] = useState(0);
 
-  // TODO: Change to array of matches.
+  // The array of matches from the similarity search.
   const [currentMatches, setCurrentMatches] = useState<string[]>([]);
+  
+  // The vector store containing the word embeddings of the page.
   const [vectorStore, setVectorStore] = useState(
     new MemoryVectorStore(embeddings)
   );
+  
   // 0 - Loading, 1 - Loaded, 2 - Error / No Vectors
   const [vectorStoreStatus, setVectorStoreStatus] = useState(0);
+  
+  // The minimum cosine similarity between the search query and a document for it to be considered a match.
   const [similaritySetting, setSimilaritySetting] = useState(0.8);
 
+  /*
+   * Similarity search function to get matches in the page. Results are filtered by `similaritySetting`, and sorted by
+   * their position in the page.
+   */
   const doSimilaritySearch = useCallback(
     (query: string, vectorStore: MemoryVectorStore) => {
       return vectorStore.similaritySearchWithScore(query, 50).then((result) => {
@@ -71,6 +86,7 @@ const App: React.FC = () => {
     [similaritySetting]
   );
 
+  // On first render of the extension, insert the CSS for match highlighting into the target page.
   useEffect(() => {
     async function insertHighlightCSS() {
       const currentTabId = (await chrome.tabs.query({active: true}))?.[0]?.id;
@@ -83,6 +99,10 @@ const App: React.FC = () => {
     insertHighlightCSS();
   }, []);
 
+  /*
+   * On first render of the extension, get the page content, split it into chunks, compute the word embeddings for each
+   * chunk, and store it in the vector store. When it completes, update the vector store status.
+   */
   useEffect(() => {
     async function getPageContent() {
       const currentTabId = (await chrome.tabs.query({active: true}))?.[0]?.id;
@@ -110,7 +130,7 @@ const App: React.FC = () => {
     getPageContent();
   }, []);
 
-  // TODO: pass array of matches.
+  // Highlight all matches in the target page. Calls `doHighlight` from `../content_scripts/Highlight.js`.
   useEffect(() => {
     async function highlightWord() {
       const currentTabId = (await chrome.tabs.query({active: true}))?.[0]?.id;
@@ -126,6 +146,7 @@ const App: React.FC = () => {
     highlightWord();
   }, [currentMatches, currentMatchIndex]);
 
+  // Perform similarity search when the search query changes.
   useEffect(() => {
     async function similaritySearch() {
       if (!searchText || vectorStore.memoryVectors.length === 0) {
@@ -138,6 +159,7 @@ const App: React.FC = () => {
     similaritySearch();
   }, [searchText]);
 
+  // Increment the `currentMatchIndex`, capping at the length of `currentMatches`.
   const incrementMatch = () => {
     if (currentMatchIndex === currentMatches.length - 1) {
       setCurrentMatch(0);
@@ -146,6 +168,7 @@ const App: React.FC = () => {
     }
   };
 
+  // Decrement the `currentMatchIndex`, capping at 0.
   const decrementMatch = () => {
     if (currentMatchIndex === 0) {
       setCurrentMatch(currentMatches.length - 1);
@@ -154,6 +177,7 @@ const App: React.FC = () => {
     }
   };
 
+  // Handle keyboard shortcuts for incrementing and decrementing matches.
   const handleKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
     if (currentMatches.length > 0) {
       if (event.code === 'Enter' && event.shiftKey) {
@@ -164,6 +188,7 @@ const App: React.FC = () => {
     }
   };
 
+  // Set up dropdown menu for adjusting similarity setting.
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleButtonClick = (event: React.MouseEvent<HTMLElement>) => {

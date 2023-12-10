@@ -15,7 +15,7 @@ function doHighlight(currentMatches, currentMatchIndex) {
         if (i === currentMatchIndex) {
           const element = document.getElementsByClassName('current-match')[0];
 
-          element.scrollIntoView({
+          element && element.scrollIntoView({
             behavior: 'smooth',
             block: 'center',
           });

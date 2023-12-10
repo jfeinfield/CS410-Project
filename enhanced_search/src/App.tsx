@@ -13,8 +13,9 @@ import {OpenAIEmbeddings} from 'langchain/embeddings/openai';
 import debounce from 'lodash/debounce';
 
 const doSimilaritySearch = (query: string, vectorStore: MemoryVectorStore) => {
-  return vectorStore.similaritySearchWithScore(query, 10).then((result) => {
+  return vectorStore.similaritySearchWithScore(query, 50).then((result) => {
     return result
+      .filter((match) => match[1] > 0.8)
       .toSorted((match) => {
         const lines = match[0].metadata.loc.lines;
         return lines.from + lines.to;
@@ -28,8 +29,9 @@ const embeddings = new OpenAIEmbeddings({
 });
 
 const splitter = new RecursiveCharacterTextSplitter({
-  chunkSize: 200,
+  chunkSize: 15,
   chunkOverlap: 0,
+  lengthFunction: (text) => text.split(/[ \s\t\n]/).length,
 });
 
 const App: React.FC = () => {
@@ -96,6 +98,7 @@ const App: React.FC = () => {
         return [];
       }
       setCurrentMatches(await doSimilaritySearch(searchText, vectorStore));
+      setCurrentMatch(0);
     }
 
     similaritySearch();

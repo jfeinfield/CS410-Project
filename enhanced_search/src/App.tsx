@@ -53,15 +53,15 @@ const App: React.FC = () => {
 
   // The array of matches from the similarity search.
   const [currentMatches, setCurrentMatches] = useState<string[]>([]);
-  
+
   // The vector store containing the word embeddings of the page.
   const [vectorStore, setVectorStore] = useState(
     new MemoryVectorStore(embeddings)
   );
-  
+
   // 0 - Loading, 1 - Loaded, 2 - Error / No Vectors
   const [vectorStoreStatus, setVectorStoreStatus] = useState(0);
-  
+
   // The minimum cosine similarity between the search query and a document for it to be considered a match.
   const [similaritySetting, setSimilaritySetting] = useState(0.8);
 
@@ -196,7 +196,7 @@ const App: React.FC = () => {
   };
   const handleMenuClose = (similarity?: number) => {
     return () => {
-      if (similarity) {
+      if (similarity != null) {
         setSimilaritySetting(similarity);
       }
       setAnchorEl(null);

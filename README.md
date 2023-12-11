@@ -5,6 +5,10 @@
 - Ryan DeStefano (ryanfd2@illinois.edu)
 - Justin Feinfield (justinf6@illinois.edu)
 
+## Demonstration Video
+
+[YouTube Link](https://youtu.be/N60SzDVKWL8)
+
 ## Setup
 
 To install the necessary libraries for development, run the following command from the [`enhanced_search`](enhanced_search) directory:
@@ -24,23 +28,26 @@ npm run build
 Once the extension is built, you can install the extension in Chrome by going to `chrome://extensions`, turning on developer mode, selecting "Load unpacked", and loading the `enhanced_search/build` directory.
 
 ## Usage
+
 The usage of this extension is the same as the standard Find in Page search feature from most browsers. The key difference between this extension and existing search features in browsers is that this extension can find matches that are not exact text matches. Examples of non-exact text matches that this extension can do are shown in the Results section.
 
 ### Search
+
 ![Search UI](images/SearchUI.png)
 
 The extension can be opened with the keyboard shortcut:
 
-```
-Ctrl+Shift+F
-```
+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd>
 
 Next, the search query can be typed into the search bar. The results can be iterated through either by clicking the "Up" and "Down" arrows, or using the following keyboard shortcuts:
 
-1. Increment: `Ctrl+Enter`
-2. Decrement: `Ctrl+Shift+Enter`
+1. Increment: <kbd>Enter</kbd>
+2. Decrement: <kbd>Shift</kbd>+<kbd>Enter</kbd>
+
+**Note:** Using this extension with other active page-altering extensions could result in problems highlighting the results. When using this extension, please ensure that no other page-altering extensions are currently in use.
 
 ### Adjust Settings
+
 ![Settings Menu](images/SettingsMenu.png)
 
 Users are able to adjust the settings of the similarity search to affect the match results. Settings can be changed by clicking the menu button on the extension:
@@ -48,13 +55,14 @@ Users are able to adjust the settings of the similarity search to affect the mat
 ![Available Settings](images/AvailableSettings.png)
 
 The available settings are:
+
 1. High: Cosine similarity greater than 0.8. Best for high precision and only relevant results
 2. Medium: Cosine similarity greater than 0.7. Balances precision and recall, likely with some results that are less relevant.
 3. Low: Cosine similarity greater than 0.6. Best for high recall, but will include some less relevant results as well.
 4. All: Show up to 50 matches, with no filtering for minimum relevancy.
 
-
 ## Results
+
 1. Synonyms
 
 Often times when searching a web page, the exact word to search for is not known. For example, searching for "Chief executive" with a traditional exact text search will not return results for "CEO":
